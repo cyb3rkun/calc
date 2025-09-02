@@ -30,8 +30,11 @@ impl Expr {
 					_ => panic!("Expected closing parenthesis"),
 				}
 			}
-			Some(Token::Op(_)) => {
-				panic!("Expression cannot start with operator")
+			Some(Token::Op(op)) => {
+				panic!(
+					"Expression can't start with operator! {:?}",
+					op
+				)
 			}
 			None => panic!("Unexpected end of input"),
 		};
@@ -49,6 +52,9 @@ impl Expr {
 					) =>
 				{
 					operation
+				}
+				Some(Token::Op(Operation::Root)) => {
+					break;
 				}
 				Some(Token::Op(_)) => break,
 				Some(Token::Atom(a)) => {
@@ -108,6 +114,7 @@ impl Expr {
 					Operation::Multiply => lhs * rhs,
 					Operation::Divide => lhs / rhs,
 					Operation::Pow => lhs.powf(rhs),
+					Operation::Root => rhs.powf(1.0 / lhs),
 					op => panic!("Bad Operator: {:?}", op),
 				}
 			}

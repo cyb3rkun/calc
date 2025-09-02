@@ -12,6 +12,7 @@ pub enum Operation {
 	Divide,
 	Parentheses(Paren),
 	Pow,
+	Root,
 	Assign,
 }
 impl Operation {
@@ -21,6 +22,7 @@ impl Operation {
 			Operation::Add | Operation::Subtract => (1.0, 1.1),
 			Operation::Multiply | Operation::Divide => (2.0, 2.1),
 			Operation::Pow => (3.0,3.1),
+			Operation::Root => (3.0, 3.1),
 			Operation::Parentheses(Paren::Close) => (0.0,0.0),
 			Operation::Parentheses(Paren::Open) => (0.0,0.0),
 		}
@@ -35,6 +37,7 @@ impl Operation {
 			'^' => Ok(Operation::Pow),
 			'(' => Ok(Operation::Parentheses(Paren::Open)),
 			')' => Ok(Operation::Parentheses(Paren::Close)),
+			'√' => Ok(Operation::Root),
 			other => Err(format!("Unknown operator: {}", other)),
 		}
 	}
