@@ -1,34 +1,39 @@
 #![allow(dead_code, unused_variables)]
 
+use std::process::Command;
 use std::{collections::HashMap, io::Write};
 
-use crate::lexer::{expression::Expr, Lex, Lexer};
+use crate::lexer::expression::Expr;
 
 mod lexer;
 
 fn main() {
 	let mut variables: HashMap<char, f64> = HashMap::new();
 	loop {
-		print!(">> ");
-		std::io::stdout().flush().unwrap();
-		let input = {
-			let mut buf = String::new();
-			std::io::stdin().read_line(&mut buf).unwrap();
-			buf
-		};
-		match input.trim() {
+		let inpt = input(">> ");
+		let trimmed = inpt.trim();
+		match trimmed.trim() {
 			"stop" => break,
 			"exit" => break,
+			"clear" => {
+				if cfg!(target_os = "windows") {
+					Command::new("cmd")
+						.args(["/C", "cls"])
+						.status()
+						.unwrap();
+				} else {
+					Command::new("clear").status().unwrap();
+				}
+				continue;
+			}
+			"help" => {
+				println!("Help menu coming soon");
+				continue;
+			}
 			_ => {}
 		}
 
-		let mut lex = match Lex::parse_string(&input) {
-			Ok(l) => l,
-			Err(e) => panic!("Error: {}", e),
-		};
-		println!("Tokens:\n{:?}", lex);
-		let expr = Expr::from_lex(&mut lex, 0.0);
-		println!("Expression Tree:\n{:#?}", expr);
+		let expr = Expr::parse(trimmed);
 		if let Some((var_name, lhs)) = expr.is_assign() {
 			let value = lhs.eval(&variables);
 			variables.insert(var_name, value);
@@ -36,7 +41,14 @@ fn main() {
 		};
 		let value = expr.eval(&variables);
 
-		println!("Result: {}", value);
+		println!("{}", value);
 	}
+}
 
+fn input(prompt: &str) -> String {
+	print!("{}", prompt);
+	std::io::stdout().flush().unwrap();
+	let mut buf = String::new();
+	std::io::stdin().read_line(&mut buf).unwrap();
+	buf
 }

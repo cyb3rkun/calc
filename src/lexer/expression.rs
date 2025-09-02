@@ -24,8 +24,6 @@ impl Expr {
 			Some(Token::Op(Operation::Parentheses(Paren::Open))) => {
 				let expr = Self::from_lex(lexer, 0.0);
 				match lexer.next() {
-					// consume closing parenthesis so caller
-					// can continue
 					Some(Token::Op(Operation::Parentheses(
 						Paren::Close,
 					))) => expr,
@@ -95,9 +93,11 @@ impl Expr {
 			Expr::Atom(c) => match c {
 				Atom::Number(value) => *value,
 
-				Atom::Var(var_name) => *variables
-					.get(var_name)
-					.unwrap_or_else(|| panic!("Undefined variable {:?}", var_name)),
+				Atom::Var(var_name) => {
+					*variables.get(var_name).unwrap_or_else(|| {
+						panic!("Undefined variable {:?}", var_name)
+					})
+				}
 			},
 			Expr::Operation { op, left, right } => {
 				let lhs = left.eval(variables);
