@@ -5,6 +5,11 @@ pub enum Paren {
 }
 
 #[derive(Debug, Clone)]
+pub enum Unary {
+	Negate,
+	Positive,
+}
+#[derive(Debug, Clone)]
 pub enum Operation {
 	Add,
 	Subtract,
@@ -14,6 +19,7 @@ pub enum Operation {
 	Pow,
 	Root,
 	Assign,
+	Unary(Unary),
 }
 impl Operation {
 	pub fn get_binding_power(&self) -> (f32, f32) {
@@ -21,10 +27,11 @@ impl Operation {
 			Operation::Assign => (0.2, 0.1),
 			Operation::Add | Operation::Subtract => (1.0, 1.1),
 			Operation::Multiply | Operation::Divide => (2.0, 2.1),
-			Operation::Pow => (3.0,3.1),
+			Operation::Pow => (3.0, 3.1),
 			Operation::Root => (3.0, 3.1),
-			Operation::Parentheses(Paren::Close) => (0.0,0.0),
-			Operation::Parentheses(Paren::Open) => (0.0,0.0),
+			Operation::Unary(_) => (0.0, 3.1),
+			Operation::Parentheses(Paren::Close) => (0.0, 0.0),
+			Operation::Parentheses(Paren::Open) => (0.0, 0.0),
 		}
 	}
 	pub fn from_char(input: char) -> Result<Operation, String> {

@@ -33,7 +33,8 @@ fn main() {
 			_ => {}
 		}
 
-		let expr = Expr::parse(trimmed);
+		let expr = Expr::parse_stream(trimmed);
+		// store variables if operation is an assignment
 		if let Some((var_name, lhs)) = expr.is_assign() {
 			let value = lhs.eval(&variables);
 			variables.insert(var_name, value);

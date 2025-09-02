@@ -1,87 +1,65 @@
 pub mod lexicon;
-use crate::lexer::lexicon::*;
 pub mod expression;
 
-#[derive(Debug, Clone)]
-pub struct Lex {
-	tokens: Vec<Token>,
-}
-impl Lex {
-	fn next(&mut self) -> Option<Token> {
-		self.tokens.pop()
-	}
-	fn peek(&mut self) -> Option<Token> {
-		self.tokens.last().cloned()
-	}
+use crate::lexer::lexicon::{Atom, Operation, Token};
+pub struct Tokenizer<'a> {
+	input: &'a str,
+	chars: std::str::Chars<'a>,
+	peeked: Option<Token>,
 }
 
-pub trait Lexer {
-	fn parse_string(input: &str) -> Result<Lex, String>;
-}
-// TODO: Implement stream parser as it would probably be easier to add features!
-impl Lexer for Lex {
-	// tokenize input string and return as Lexer (Vec<Token>)
-	fn parse_string(input: &str) -> Result<Lex, String> {
-		let mut digit_buff = String::new();
-		let mut prev_token: Option<Token> = None;
-		let mut tokens = Vec::new();
+impl<'a> Tokenizer<'a> {
+	pub fn new(input: &'a str) -> Self {
+		Self {
+			input,
+			chars: input.chars(),
+			peeked: None,
+		}
+	}
 
-		for c in input.chars().filter(|c| !c.is_whitespace()) {
-			if c.is_ascii_digit() {
-				digit_buff.push(c);
-				// skip rest of loop and start new iteration
+	fn read_num(&mut self, first: char) -> Token {
+		let mut buf = String::new();
+		buf.push(first);
+		while let Some(c) = self.chars.as_str().chars().next() {
+			if c.is_ascii_digit() || c == '.' {
+				buf.push(c);
+				self.chars.next();
+			} else {
+				break;
+			}
+		}
+		let value = buf.parse::<f64>().expect("Invalid number");
+		Token::Atom(Atom::Number(value))
+	}
+
+	fn next_token(&mut self) -> Option<Token> {
+		while let Some(c) = self.chars.next() {
+			if c.is_whitespace() {
 				continue;
 			}
-			if !digit_buff.is_empty() {
-				let value = Atom::num_from_str(&digit_buff)?;
-				let atom = Token::Atom(value);
-				tokens.push(atom.clone());
-				prev_token = Some(atom);
-				digit_buff.clear();
+			if c.is_ascii_digit() {
+				return Some(self.read_num(c));
 			}
 			if c.is_alphabetic() {
-				let var = Atom::var_from_char(c);
-				let atom = Token::Atom(var);
-
-				if matches!(
-					prev_token,
-					Some(Token::Atom(_))
-						| Some(Token::Op(Operation::Parentheses(
-							Paren::Close
-						)))
-				) {
-					tokens.push(Token::Op(Operation::Multiply));
-				}
-				tokens.push(atom.clone());
-				prev_token = Some(atom);
-				continue;
+				return Some(Token::Atom(Atom::Var(c)));
 			}
-			if c == '('
-				&& matches!(
-					prev_token,
-					Some(Token::Atom(_))
-						| Some(Token::Op(Operation::Parentheses(
-							Paren::Close
-						)))
-				) && !matches!(
-				prev_token,
-				Some(Token::Op(Operation::Pow))
-					| Some(Token::Op(Operation::Root))
-			) {
-				tokens.push(Token::Op(Operation::Multiply));
+			if let Ok(op) = Operation::from_char(c) {
+				return Some(Token::Op(op));
 			}
-			let op = Operation::from_char(c)?;
-			let token = Token::Op(op);
-			tokens.push(token.clone());
-			prev_token = Some(token)
 		}
-		if !digit_buff.is_empty() {
-			let value: f64 = digit_buff.parse().unwrap();
-			tokens.push(Token::Atom(Atom::Number(value)));
-			digit_buff.clear();
-		}
+		None
+	}
 
-		tokens.reverse();
-		Ok(Lex { tokens })
+	pub fn peek(&mut self) -> Option<Token> {
+		if self.peeked.is_none() {
+			self.peeked = self.next_token();
+		}
+		self.peeked.clone()
+	}
+	pub fn next(&mut self) -> Option<Token> {
+		if let Some(tok) = self.peeked.take() {
+			return Some(tok);
+		}
+		self.next_token()
 	}
 }
