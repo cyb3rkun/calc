@@ -35,6 +35,7 @@ impl Expr {
 			// Unary Add
 			Some(Token::Op(Operation::Add)) => {
 				let rhs = Self::from_stream(lexer, 100.0);
+				// Expr::Atom(Atom::Number(rhs))
 				Expr::Operation {
 					op: Operation::Unary(Unary::Positive),
 					left: Box::new(Expr::Atom(Atom::Number(0.0))),
@@ -65,7 +66,10 @@ impl Expr {
 					| Expr::Operation {
 						op: Operation::Parentheses(Paren::Close),
 						..
-					}
+					} | Expr::Operation {
+					op: Operation::Unary(_),
+					..
+				}
 			);
 			let op = match lexer.peek() {
 				Some(Token::Op(Operation::Parentheses(
