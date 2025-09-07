@@ -40,9 +40,12 @@ fn main() {
 			variables.insert(var_name, value);
 			continue;
 		};
+
+		println!("{}", expr);
+		println!("{:#?}", expr);
 		let value = expr.eval(&variables);
 
-		println!("{}", value);
+		println!("Result: {}", value);
 	}
 }
 
@@ -53,3 +56,5 @@ fn input(prompt: &str) -> String {
 	std::io::stdin().read_line(&mut buf).unwrap();
 	buf
 }
+
+
